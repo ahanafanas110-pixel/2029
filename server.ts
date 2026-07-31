@@ -179,11 +179,21 @@ Predict the next winning COLOR ('green' or 'red' or violet split), color confide
 
     if (response.text) {
       const parsed = JSON.parse(response.text.trim());
-      // Ensure color and size match exact math rules
-      const mathDetails = getBallColorAndSize(parsed.predictedNumber);
-      parsed.predictedColor = mathDetails.color;
-      parsed.predictedColorName = mathDetails.colorName;
-      parsed.predictedSize = mathDetails.size;
+      
+      // Ensure predictedColor is valid
+      if (!parsed.predictedColor) {
+        parsed.predictedColor = 'green';
+        parsed.predictedColorName = 'GREEN (সবুজ)';
+      }
+      
+      const pred = parsed.predictedColor;
+      if (!parsed.colorProbabilities) {
+        parsed.colorProbabilities = {
+          green: pred.includes('green') ? parsed.confidence || 98 : 100 - (parsed.confidence || 98),
+          red: pred.includes('red') ? parsed.confidence || 98 : 100 - (parsed.confidence || 98),
+          violet: 10,
+        };
+      }
 
       return res.json({ success: true, prediction: parsed, source: "gemini" });
     } else {
