@@ -8,6 +8,7 @@ import { HistoryLogTable } from './components/HistoryLogTable';
 import { HistoryItem, PredictionResult, PredictionStats } from './types';
 import { getBallInfo } from './utils/colorUtils';
 import { playScanSound, playWinSound, playBallClickSound } from './utils/soundUtils';
+import { generateClientPrediction } from './utils/predictionEngine';
 import { ShieldCheck, Sparkles, RefreshCw } from 'lucide-react';
 
 const INITIAL_STACK_NUMBERS = [3, 8, 2, 5, 0, 7, 1, 9, 4, 6];
@@ -48,7 +49,7 @@ export default function App() {
 
   const [logs, setLogs] = useState<HistoryItem[]>([]);
 
-  // Function to call AI API endpoint for next prediction with exact 3-second scanning cycle
+  // Function to call AI API endpoint for next prediction with exact 3-second scanning cycle & client fallback for Vercel
   const runPredictionScan = useCallback(
     async (currentHistory: HistoryItem[]) => {
       if (currentHistory.length < 10) return;
@@ -59,35 +60,45 @@ export default function App() {
       const historyNumbers = currentHistory.map((item) => item.number);
       const scanStartTime = Date.now();
 
+      let resultPrediction: PredictionResult | null = null;
+
       try {
+        // Create a controller with timeout (3 seconds) to prevent infinite loading on Vercel static hosts
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2800);
+
         const response = await fetch('/api/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ history: historyNumbers }),
+          signal: controller.signal,
         });
 
-        const data = await response.json();
+        clearTimeout(timeoutId);
 
-        // Enforce exact 3 seconds (3000ms) scanning duration for AI analysis
-        const elapsedTime = Date.now() - scanStartTime;
-        const remainingDelay = Math.max(0, 3000 - elapsedTime);
-
-        setTimeout(() => {
+        if (response.ok) {
+          const data = await response.json();
           if (data.success && data.prediction) {
-            setPrediction(data.prediction);
-          } else {
-            console.warn('Prediction response fallback:', data);
+            resultPrediction = data.prediction;
           }
-          setIsScanning(false);
-        }, remainingDelay);
+        }
       } catch (err) {
-        console.error('Failed to fetch prediction:', err);
-        const elapsedTime = Date.now() - scanStartTime;
-        const remainingDelay = Math.max(0, 3000 - elapsedTime);
-        setTimeout(() => {
-          setIsScanning(false);
-        }, remainingDelay);
+        console.warn('API route call skipped or timed out, generating local client AI prediction:', err);
       }
+
+      // If backend API fails or isn't available (e.g. Vercel static SPA export), generate instant client AI prediction
+      if (!resultPrediction) {
+        resultPrediction = generateClientPrediction(historyNumbers);
+      }
+
+      // Enforce smooth 3-second (3000ms) visual scanning duration
+      const elapsedTime = Date.now() - scanStartTime;
+      const remainingDelay = Math.max(0, 3000 - elapsedTime);
+
+      setTimeout(() => {
+        setPrediction(resultPrediction);
+        setIsScanning(false);
+      }, remainingDelay);
     },
     [soundEnabled]
   );
