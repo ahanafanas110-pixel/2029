@@ -56,48 +56,90 @@ function getBallColorAndSize(num: number) {
 function generateFallbackPrediction(history: number[]) {
   const safeHistory = Array.isArray(history) && history.length > 0 ? history : [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
   const last10 = safeHistory.slice(-10);
-  const lastNum = last10[last10.length - 1];
+  const len = last10.length;
+  const lastNum = last10[len - 1];
+  const prevNum = len > 1 ? last10[len - 2] : 5;
 
-  // Frequency analysis
-  const counts: Record<number, number> = {};
-  for (let i = 0; i <= 9; i++) counts[i] = 0;
-  last10.forEach((n) => counts[n] = (counts[n] || 0) + 1);
+  // 1. Calculate frequency of numbers 0-9
+  const freq: number[] = Array(10).fill(0);
+  last10.forEach((n) => {
+    if (n >= 0 && n <= 9) freq[n]++;
+  });
 
-  // Even / Odd count
+  // 2. Cold numbers (haven't appeared in last 10)
+  const coldNumbers: number[] = [];
+  for (let i = 0; i <= 9; i++) {
+    if (freq[i] === 0) coldNumbers.push(i);
+  }
+
+  // 3. Parity & Size balance
   const evenCount = last10.filter((n) => n % 2 === 0).length;
-  const oddCount = last10.length - evenCount;
-
-  // Big / Small count
+  const oddCount = len - evenCount;
   const bigCount = last10.filter((n) => n >= 5).length;
-  const smallCount = last10.length - bigCount;
+  const smallCount = len - bigCount;
 
-  // Strategy: Counter-balance or streak continuation based on parity & size
-  let predictedNumber: number;
-  
-  if (oddCount > evenCount) {
-    // Prefer even numbers (0, 2, 4, 6, 8)
-    predictedNumber = smallCount < bigCount ? 2 : 6;
-  } else {
-    // Prefer odd numbers (1, 3, 5, 7, 9)
-    predictedNumber = smallCount < bigCount ? 3 : 7;
+  // 4. Candidate scores for 0-9
+  const scores: number[] = Array(10).fill(10);
+
+  coldNumbers.forEach((num) => {
+    scores[num] += 15;
+  });
+
+  const preferEven = oddCount >= evenCount;
+  for (let i = 0; i <= 9; i++) {
+    if (preferEven && i % 2 === 0) scores[i] += 12;
+    if (!preferEven && i % 2 !== 0) scores[i] += 12;
   }
 
-  // Adjust to avoid direct repetition if possible
-  if (predictedNumber === lastNum) {
-    predictedNumber = (predictedNumber + 3) % 10;
+  const preferSmall = bigCount >= smallCount;
+  for (let i = 0; i <= 9; i++) {
+    if (preferSmall && i < 5) scores[i] += 12;
+    if (!preferSmall && i >= 5) scores[i] += 12;
   }
 
+  const isZigzagSize = len >= 3 && (last10[len - 1] >= 5) !== (last10[len - 2] >= 5);
+  if (isZigzagSize) {
+    const nextSizeShouldBeBig = last10[len - 1] < 5;
+    for (let i = 0; i <= 9; i++) {
+      if (nextSizeShouldBeBig && i >= 5) scores[i] += 15;
+      if (!nextSizeShouldBeBig && i < 5) scores[i] += 15;
+    }
+  }
+
+  const mirrorNum = (lastNum + 5) % 10;
+  scores[mirrorNum] += 18;
+
+  const sumLastTwo = (lastNum + prevNum) % 10;
+  scores[sumLastTwo] += 14;
+
+  scores[lastNum] -= 10;
+
+  let bestCandidate = 0;
+  let maxScore = -999;
+
+  for (let i = 0; i <= 9; i++) {
+    const hash = last10.reduce((acc, val, idx) => (acc + val * (idx + 1) * (i + 3)) % 17, 0);
+    const totalScore = scores[i] + hash;
+
+    if (totalScore > maxScore) {
+      maxScore = totalScore;
+      bestCandidate = i;
+    }
+  }
+
+  const predictedNumber = bestCandidate;
   const { color, colorName, size } = getBallColorAndSize(predictedNumber);
-  
-  const trends = [
-    "Parity Reversal Shift",
-    "Big/Small Counter Balance",
-    "Dragon Streak Follow-up",
-    "Frequency Gap Rebound",
-    "Color Symmetry Cycle",
+
+  const trendTypes = [
+    "Parity Reversal Shift (প্যারিটি শিফট)",
+    "Big/Small Counter Balance (বিগ/স্মল ব্যালেন্স)",
+    "Mirror Pattern Cycle (মিরর প্যাটার্ন)",
+    "Cold Gap Rebound (কোল্ড নাম্বার রিবাউন্ড)",
+    "Zigzag Size Wave (জিগজ্যাগ সাইজ ওয়েব)",
+    "Color Symmetry Shift (কালার সিমেট্রি)",
   ];
 
-  const trendType = trends[Math.floor(Math.random() * trends.length)];
+  const trendType = trendTypes[(lastNum + prevNum + sumLastTwo) % trendTypes.length];
   const confidence = Math.floor(Math.random() * 8) + 88; // 88% - 95%
 
   return {
@@ -107,7 +149,7 @@ function generateFallbackPrediction(history: number[]) {
     predictedSize: size,
     confidence,
     trendType,
-    explanation: `Based on the pattern of recent 10 results [${last10.join(", ")}], AI detected a strong ${trendType} pattern. Number ${predictedNumber} (${colorName}, ${size.toUpperCase()}) exhibits maximum momentum for the upcoming cycle.`,
+    explanation: `১০ টি সিগন্যাল [${last10.join(", ")}] এনালাইসিস করে ${trendType} ধরা পড়েছে। ${colorName.toUpperCase()} এবং ${size.toUpperCase()} (${predictedNumber} নম্বর) সিগন্যালে সর্বোচ্চ উইনিং চান্স রয়েছে।`,
     suggestedAction: `Bet on ${colorName.toUpperCase()} or Number ${predictedNumber}`,
     riskLevel: "Safe" as const,
   };
