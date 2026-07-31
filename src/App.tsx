@@ -126,8 +126,8 @@ export default function App() {
     };
 
     if (historyStack.length < 10) {
-      // Adding numbers 1 to 10 step-by-step
-      const updatedStack = [...historyStack, newItem];
+      // Latest item comes to index 0 (#1 slot)
+      const updatedStack = [newItem, ...historyStack];
       setHistoryStack(updatedStack);
 
       if (updatedStack.length === 10) {
@@ -135,7 +135,7 @@ export default function App() {
         runPredictionScan(updatedStack);
       }
     } else {
-      // Stack already has 10 items: Shift top ball in, drop 10th ball
+      // Stack already has 10 items: latest comes to index 0, drop oldest 10th item
       const updatedStack = [newItem, ...historyStack.slice(0, 9)];
       setHistoryStack(updatedStack);
       runPredictionScan(updatedStack);
@@ -151,10 +151,21 @@ export default function App() {
 
     let isWin = false;
     if (prediction) {
-      isWin =
-        prediction.predictedColor === info.color ||
-        prediction.predictedNumber === info.number ||
-        prediction.predictedSize === info.size;
+      // Color matching strictly for Color prediction (including violet split matches)
+      const predColor = prediction.predictedColor;
+      const actualColor = info.color;
+
+      if (predColor === actualColor) {
+        isWin = true;
+      } else if (predColor === 'green' && actualColor === 'green-violet') {
+        isWin = true;
+      } else if (predColor === 'red' && actualColor === 'red-violet') {
+        isWin = true;
+      } else if (actualColor === 'green' && predColor === 'green-violet') {
+        isWin = true;
+      } else if (actualColor === 'red' && predColor === 'red-violet') {
+        isWin = true;
+      }
     }
 
     if (isWin) {
@@ -167,9 +178,11 @@ export default function App() {
       color: info.color,
       size: info.size,
       timestamp: timeStr,
+      predictedColor: prediction?.predictedColor,
       predictedWasCorrect: isWin,
     };
 
+    // Index 0 (#1 slot) is latest result
     const updatedStack = [newItem, ...historyStack.slice(0, 9)];
     setHistoryStack(updatedStack);
     setLogs((prev) => [newItem, ...prev]);

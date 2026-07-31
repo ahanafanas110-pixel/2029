@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Layers, Trash2, ArrowUp, Sparkles, PlusCircle } from 'lucide-react';
+import { Layers, Trash2, ArrowDown, Sparkles, PlusCircle, CheckCircle, XCircle } from 'lucide-react';
 import { HistoryItem } from '../types';
 import { BallCircle } from './BallCircle';
 import { getBallInfo, getColorBadgeBg } from '../utils/colorUtils';
@@ -34,7 +34,7 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                10-BALL HISTORY STACK
+                10-SIGNAL STACK ORDER
                 <span
                   className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     isFull
@@ -47,8 +47,8 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
               </h2>
               <p className="text-xs text-zinc-400">
                 {isFull
-                  ? 'Top = Latest (#10) • Bottom = Oldest (#1)'
-                  : 'নিচে থেকে উপরে সিগন্যাল যুক্ত হচ্ছে...'}
+                  ? '১ম স্থান (#১) = লেটেস্ট রেজাল্ট • ১০ম স্থান (#১০) = পুরনো'
+                  : 'উপরে সবচেয়ে নতুন রেজাল্ট যুক্ত হচ্ছে...'}
               </p>
             </div>
           </div>
@@ -78,9 +78,9 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
         <div className="mt-4 space-y-2 relative min-h-[380px] max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
           <div className="text-[11px] font-semibold uppercase text-amber-400/80 flex items-center justify-between px-2 py-1 bg-amber-500/5 rounded-lg border border-amber-500/10">
             <span className="flex items-center gap-1">
-              <ArrowUp className="w-3 h-3 text-amber-400 animate-bounce" /> LATEST RESULT (TOP #10)
+              <ArrowDown className="w-3 h-3 text-amber-400 animate-bounce" /> #১ স্থান = LATEST RESULT (নতুন উইন/লস)
             </span>
-            <span>COLOR • SIZE</span>
+            <span>COLOR • RESULT</span>
           </div>
 
           {displayHistory.length === 0 ? (
@@ -97,7 +97,7 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
             <AnimatePresence mode="popLayout" initial={false}>
               {displayHistory.map((item, index) => {
                 const ball = getBallInfo(item.number);
-                const isTop = index === 0;
+                const isFirstSlot = index === 0; // #1 is the latest item
 
                 return (
                   <motion.div
@@ -108,19 +108,19 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
                     exit={{ opacity: 0, y: 30, scale: 0.8 }}
                     transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                     className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${
-                      isTop
-                        ? 'bg-gradient-to-r from-amber-500/10 via-zinc-900 to-zinc-900 border-amber-500/40 shadow-lg shadow-amber-500/5'
+                      isFirstSlot
+                        ? 'bg-gradient-to-r from-amber-500/15 via-zinc-900 to-zinc-900 border-amber-400 shadow-lg shadow-amber-500/10'
                         : 'bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Slot position index */}
+                      {/* Slot position index #1, #2... */}
                       <span
                         className={`w-7 text-center font-mono text-xs font-extrabold ${
-                          isTop ? 'text-amber-400' : 'text-zinc-500'
+                          isFirstSlot ? 'text-amber-400' : 'text-zinc-500'
                         }`}
                       >
-                        #{displayHistory.length - index}
+                        #{index + 1}
                       </span>
 
                       {/* Ball circle */}
@@ -129,7 +129,7 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
                         size="sm"
                         showSizeLabel={false}
                         onClick={() => onBallClick(item.number)}
-                        glowing={isTop}
+                        glowing={isFirstSlot}
                       />
 
                       <div>
@@ -137,9 +137,9 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
                           <span className="text-sm font-extrabold text-white">
                             Number {item.number}
                           </span>
-                          {isTop && (
+                          {isFirstSlot && (
                             <span className="px-1.5 py-0.2 text-[9px] font-black uppercase rounded bg-amber-400 text-zinc-950 flex items-center gap-0.5">
-                              <Sparkles className="w-2.5 h-2.5" /> LATEST
+                              <Sparkles className="w-2.5 h-2.5" /> LATEST (#১)
                             </span>
                           )}
                         </div>
@@ -149,20 +149,31 @@ export const HistoryStack: React.FC<HistoryStackProps> = ({
                       </div>
                     </div>
 
-                    {/* Attribute badges */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Attribute badges & WIN/LOSS status */}
+                    <div className="flex items-center gap-2">
                       <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${getColorBadgeBg(ball.color)}`}>
                         {ball.colorName}
                       </span>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-extrabold uppercase border ${
-                          ball.size === 'big'
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                            : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                        }`}
-                      >
-                        {ball.size}
-                      </span>
+
+                      {item.predictedWasCorrect !== undefined ? (
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-black uppercase flex items-center gap-1 shadow ${
+                            item.predictedWasCorrect
+                              ? 'bg-emerald-500 text-zinc-950 border border-emerald-400'
+                              : 'bg-rose-600 text-white border border-rose-400'
+                          }`}
+                        >
+                          {item.predictedWasCorrect ? (
+                            <>
+                              <CheckCircle className="w-3.5 h-3.5" /> WIN (উইন)
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3.5 h-3.5" /> LOSS (লস)
+                            </>
+                          )}
+                        </span>
+                      ) : null}
                     </div>
                   </motion.div>
                 );

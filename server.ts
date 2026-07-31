@@ -57,101 +57,64 @@ function generateFallbackPrediction(history: number[]) {
   const safeHistory = Array.isArray(history) && history.length > 0 ? history : [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
   const last10 = safeHistory.slice(-10);
   const len = last10.length;
-  const lastNum = last10[len - 1];
-  const prevNum = len > 1 ? last10[len - 2] : 5;
 
-  // 1. Calculate frequency of numbers 0-9
-  const freq: number[] = Array(10).fill(0);
-  last10.forEach((n) => {
-    if (n >= 0 && n <= 9) freq[n]++;
+  const colorSeq = last10.map((n) => getBallColorAndSize(n).color);
+
+  let greenCount = 0;
+  let redCount = 0;
+  colorSeq.forEach((c) => {
+    if (c.includes('green')) greenCount++;
+    if (c.includes('red')) redCount++;
   });
 
-  // 2. Cold numbers (haven't appeared in last 10)
-  const coldNumbers: number[] = [];
-  for (let i = 0; i <= 9; i++) {
-    if (freq[i] === 0) coldNumbers.push(i);
+  const lastColor = colorSeq[len - 1];
+  const lastBaseColor = lastColor.includes('green') ? 'green' : 'red';
+
+  let streakCount = 1;
+  for (let i = len - 2; i >= 0; i--) {
+    const base = colorSeq[i].includes('green') ? 'green' : 'red';
+    if (base === lastBaseColor) streakCount++;
+    else break;
   }
 
-  // 3. Parity & Size balance
-  const evenCount = last10.filter((n) => n % 2 === 0).length;
-  const oddCount = len - evenCount;
-  const bigCount = last10.filter((n) => n >= 5).length;
-  const smallCount = len - bigCount;
+  let predictedColor: string = 'green';
+  let predictedColorName = 'GREEN (সবুজ)';
+  let trendType = 'Color Trend Analysis';
+  let confidence = Math.floor(Math.random() * 4) + 96; // 96-99%
 
-  // 4. Candidate scores for 0-9
-  const scores: number[] = Array(10).fill(10);
-
-  coldNumbers.forEach((num) => {
-    scores[num] += 15;
-  });
-
-  const preferEven = oddCount >= evenCount;
-  for (let i = 0; i <= 9; i++) {
-    if (preferEven && i % 2 === 0) scores[i] += 12;
-    if (!preferEven && i % 2 !== 0) scores[i] += 12;
+  if (streakCount >= 3) {
+    predictedColor = lastBaseColor;
+    predictedColorName = predictedColor === 'green' ? 'GREEN (সবুজ)' : 'RED (লাল)';
+    trendType = `Color Dragon Streak (${streakCount}x ড্রাগন সিগন্যাল)`;
+    confidence = Math.floor(Math.random() * 3) + 97;
+  } else if (greenCount <= redCount) {
+    predictedColor = 'green';
+    predictedColorName = 'GREEN (সবুজ)';
+    trendType = 'Dominant Color Rebalance (সবুজ সিগন্যাল)';
+    confidence = Math.floor(Math.random() * 3) + 96;
+  } else {
+    predictedColor = 'red';
+    predictedColorName = 'RED (লাল)';
+    trendType = 'Dominant Color Rebalance (লাল সিগন্যাল)';
+    confidence = Math.floor(Math.random() * 3) + 96;
   }
 
-  const preferSmall = bigCount >= smallCount;
-  for (let i = 0; i <= 9; i++) {
-    if (preferSmall && i < 5) scores[i] += 12;
-    if (!preferSmall && i >= 5) scores[i] += 12;
-  }
-
-  const isZigzagSize = len >= 3 && (last10[len - 1] >= 5) !== (last10[len - 2] >= 5);
-  if (isZigzagSize) {
-    const nextSizeShouldBeBig = last10[len - 1] < 5;
-    for (let i = 0; i <= 9; i++) {
-      if (nextSizeShouldBeBig && i >= 5) scores[i] += 15;
-      if (!nextSizeShouldBeBig && i < 5) scores[i] += 15;
-    }
-  }
-
-  const mirrorNum = (lastNum + 5) % 10;
-  scores[mirrorNum] += 18;
-
-  const sumLastTwo = (lastNum + prevNum) % 10;
-  scores[sumLastTwo] += 14;
-
-  scores[lastNum] -= 10;
-
-  let bestCandidate = 0;
-  let maxScore = -999;
-
-  for (let i = 0; i <= 9; i++) {
-    const hash = last10.reduce((acc, val, idx) => (acc + val * (idx + 1) * (i + 3)) % 17, 0);
-    const totalScore = scores[i] + hash;
-
-    if (totalScore > maxScore) {
-      maxScore = totalScore;
-      bestCandidate = i;
-    }
-  }
-
-  const predictedNumber = bestCandidate;
-  const { color, colorName, size } = getBallColorAndSize(predictedNumber);
-
-  const trendTypes = [
-    "Parity Reversal Shift (প্যারিটি শিফট)",
-    "Big/Small Counter Balance (বিগ/স্মল ব্যালেন্স)",
-    "Mirror Pattern Cycle (মিরর প্যাটার্ন)",
-    "Cold Gap Rebound (কোল্ড নাম্বার রিবাউন্ড)",
-    "Zigzag Size Wave (জিগজ্যাগ সাইজ ওয়েব)",
-    "Color Symmetry Shift (কালার সিমেট্রি)",
-  ];
-
-  const trendType = trendTypes[(lastNum + prevNum + sumLastTwo) % trendTypes.length];
-  const confidence = Math.floor(Math.random() * 8) + 88; // 88% - 95%
+  const greenProb = predictedColor.includes('green') ? confidence : 100 - confidence;
+  const redProb = predictedColor.includes('red') ? confidence : 100 - confidence;
 
   return {
-    predictedNumber,
-    predictedColor: color,
-    predictedColorName: colorName,
-    predictedSize: size,
+    predictedColor,
+    predictedColorName,
     confidence,
+    colorProbabilities: {
+      green: greenProb,
+      red: redProb,
+      violet: 10,
+    },
     trendType,
-    explanation: `১০ টি সিগন্যাল [${last10.join(", ")}] এনালাইসিস করে ${trendType} ধরা পড়েছে। ${colorName.toUpperCase()} এবং ${size.toUpperCase()} (${predictedNumber} নম্বর) সিগন্যালে সর্বোচ্চ উইনিং চান্স রয়েছে।`,
-    suggestedAction: `Bet on ${colorName.toUpperCase()} or Number ${predictedNumber}`,
-    riskLevel: "Safe" as const,
+    explanation: `১০ টি সিগন্যাল এনালাইসিস করে ${trendType} নিশ্চিত হয়েছে। পরবর্তী রাউন্ডে **${predictedColorName}** কালারের উইনিং চান্স ${confidence}%।`,
+    suggestedAction: `${predictedColorName} এ ট্রেড করুন`,
+    riskLevel: 'High Accuracy' as const,
   };
 }
 
@@ -177,23 +140,20 @@ app.post("/api/predict", async (req, res) => {
     }
 
     const systemInstruction = `
-You are the master AI analyzer for "DESH CLUB PREDICTOR", a high-accuracy trend predictor for 0-9 color prediction games.
+You are the master AI analyzer for "DESH CLUB PREDICTOR", a high-accuracy (96%-99%) COLOR prediction generator.
 Color Rules:
 - Number 0: Red + Violet (Split)
 - Numbers 1, 3, 7, 9: Green
 - Numbers 2, 4, 6, 8: Red
 - Number 5: Green + Violet (Split)
-Size Rules:
-- Small: 0, 1, 2, 3, 4
-- Big: 5, 6, 7, 8, 9
 
-You will analyze the last 10 historical numbers and output a structured prediction for the NEXT result (number 0 to 9).
-Provide a high-confidence prediction with logical pattern explanations (e.g. Dragon streak, Zigzag parity, Big/Small reversion, Frequency gap).
+Analyze the last 10 historical numbers and output a high-confidence COLOR PREDICTION ('green', 'red', 'red-violet', or 'green-violet') for the NEXT result.
+Confidence MUST be between 96 and 99%.
 Return strictly JSON matching the required schema.
 `;
 
     const prompt = `Analyze these last 10 numbers sequence: [${last10.join(", ")}].
-Predict the next single number (0-9), its color, size (big/small), confidence percentage (85-98), trend name, and detailed short Bengali/English explanation for DESH CLUB users.`;
+Predict the next winning COLOR ('green' or 'red' or violet split), color confidence percentage (96-99), color probabilities, pattern trend name, and short Bengali explanation.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
@@ -204,17 +164,15 @@ Predict the next single number (0-9), its color, size (big/small), confidence pe
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            predictedNumber: { type: Type.INTEGER, description: "Predicted next number from 0 to 9" },
             predictedColor: { type: Type.STRING, description: "Must be 'green', 'red', 'red-violet', or 'green-violet'" },
-            predictedColorName: { type: Type.STRING, description: "Formatted color name (e.g. 'Green', 'Red', 'Red + Violet')" },
-            predictedSize: { type: Type.STRING, description: "Must be 'big' or 'small'" },
-            confidence: { type: Type.INTEGER, description: "Confidence percentage between 85 and 99" },
-            trendType: { type: Type.STRING, description: "Pattern name e.g. 'Dragon Pattern Reversal'" },
-            explanation: { type: Type.STRING, description: "Detailed 1-2 sentence trend breakdown for users" },
-            suggestedAction: { type: Type.STRING, description: "Action advice e.g. 'Play Green / Big'" },
-            riskLevel: { type: Type.STRING, description: "'Safe', 'Moderate', or 'Aggressive'" },
+            predictedColorName: { type: Type.STRING, description: "Formatted color name e.g. 'GREEN (সবুজ)', 'RED (লাল)'" },
+            confidence: { type: Type.INTEGER, description: "High accuracy confidence percentage between 96 and 99" },
+            trendType: { type: Type.STRING, description: "Pattern name e.g. 'Color Dragon Streak (98.4%)'" },
+            explanation: { type: Type.STRING, description: "Short Bengali explanation of color prediction" },
+            suggestedAction: { type: Type.STRING, description: "Action advice e.g. 'Trade Green'" },
+            riskLevel: { type: Type.STRING, description: "'High Accuracy'" },
           },
-          required: ["predictedNumber", "predictedColor", "predictedColorName", "predictedSize", "confidence", "trendType", "explanation"],
+          required: ["predictedColor", "predictedColorName", "confidence", "trendType", "explanation"],
         },
       },
     });

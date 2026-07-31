@@ -14,19 +14,23 @@ export interface HistoryItem {
   color: BallColor;
   size: BallSize;
   timestamp: string;
+  predictedColor?: BallColor;
   predictedWasCorrect?: boolean;
 }
 
 export interface PredictionResult {
-  predictedNumber: number;
   predictedColor: BallColor;
   predictedColorName: string;
-  predictedSize: BallSize;
-  confidence: number; // e.g. 85-98%
-  trendType: string; // e.g. "Alternate Reversal", "Dragon Streak", "Parity Balance"
+  confidence: number; // 96-99%
+  colorProbabilities: {
+    green: number;
+    red: number;
+    violet: number;
+  };
+  trendType: string;
   explanation: string;
   suggestedAction: string;
-  riskLevel: 'Safe' | 'Moderate' | 'Aggressive';
+  riskLevel: 'Safe' | 'Moderate' | 'High Accuracy';
 }
 
 export interface PredictionStats {
