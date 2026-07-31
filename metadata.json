@@ -1,0 +1,6 @@
+{
+  "name": "DESH CLUB PREDICTOR",
+  "description": "AI-powered color and number prediction app with password protection, 10-ball history stack, smooth shifting animations, and trend scanning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
