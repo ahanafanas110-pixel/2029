@@ -27,10 +27,10 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-emerald-400">
-                DESH CLUB PREDICTOR
+                PREMIUM HACK HUB
               </h1>
               <span className="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-extrabold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                VIP 2026
+                PRO 2026
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 hidden xs:block">

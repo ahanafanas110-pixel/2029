@@ -8,8 +8,8 @@ interface PasswordModalProps {
   soundEnabled: boolean;
 }
 
-const STORAGE_ATTEMPTS_KEY = 'desh_pwd_attempts_v2';
-const STORAGE_LOCKOUT_KEY = 'desh_pwd_lockout_until_v2';
+const STORAGE_ATTEMPTS_KEY = 'hackhub_pwd_attempts_v2';
+const STORAGE_LOCKOUT_KEY = 'hackhub_pwd_lockout_until_v2';
 const LOCKOUT_DURATION_MS = 60 * 60 * 1000; // 1 hour = 3,600,000 ms
 
 export const PasswordModal: React.FC<PasswordModalProps> = ({ onSuccess, soundEnabled }) => {
@@ -187,7 +187,7 @@ export const PasswordModal: React.FC<PasswordModalProps> = ({ onSuccess, soundEn
           </span>
 
           <h2 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200 tracking-wide uppercase">
-            DESH CLUB PREDICTOR
+            PREMIUM HACK HUB
           </h2>
           <p className="mt-1 text-xs text-zinc-400 max-w-xs">
             {isLocked
@@ -282,7 +282,7 @@ export const PasswordModal: React.FC<PasswordModalProps> = ({ onSuccess, soundEn
 
         <div className="mt-5 text-center border-t border-zinc-800/80 pt-3">
           <p className="text-[11px] text-zinc-500 font-mono">
-            DESH CLUB PREDICTOR v2.6 • IP Lock Protection • Gemini AI
+            PREMIUM HACK HUB v2.6 • IP Lock Protection • Gemini AI
           </p>
         </div>
       </motion.div>

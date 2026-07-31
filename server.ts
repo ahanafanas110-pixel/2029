@@ -140,7 +140,7 @@ app.post("/api/predict", async (req, res) => {
     }
 
     const systemInstruction = `
-You are the master AI analyzer for "DESH CLUB PREDICTOR", a high-accuracy (96%-99%) COLOR prediction generator.
+You are the master AI analyzer for "PREMIUM HACK HUB", a high-accuracy (96%-99%) COLOR prediction generator.
 Color Rules:
 - Number 0: Red + Violet (Split)
 - Numbers 1, 3, 7, 9: Green

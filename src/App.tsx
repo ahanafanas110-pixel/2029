@@ -300,9 +300,9 @@ export default function App() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span className="font-bold text-zinc-400 uppercase tracking-wider">
-              DESH CLUB PREDICTOR
+              PREMIUM HACK HUB
             </span>
-            <span>• VIP 2026 EDITION</span>
+            <span>• PRO 2026 EDITION</span>
           </div>
           <p className="font-mono text-[11px]">
             Powered by Gemini AI Model • 3s Deep Signal Analysis
